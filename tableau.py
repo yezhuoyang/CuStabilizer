@@ -9,6 +9,13 @@ class tableau:
     
     def __init__(num__qubit,self) -> None:
         self._num_qubit = num__qubit
+        #Store instructions in tuples
+        self._instructions=[]
+        
+        
+    #Read instructions from a file
+    def read_instructions_from_file(self, filepath):
+        pass    
         
         
     def init_tableau(self):
@@ -17,6 +24,7 @@ class tableau:
         diagonal_indices=np.arange(2*self._num_qubit)
         self._tableau[diagonal_indices, diagonal_indices] = 1
         
+           
     '''
     Return the list of stabilizers in the string format
     For example:
