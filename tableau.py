@@ -15,6 +15,18 @@ class tableau:
     #Read instructions from a file
     def read_instructions_from_file(self, filepath):
         pass    
+    
+    
+    
+    def calculate(self):
+        pass
+    
+    
+    
+    #Execute one instruction. Instruction is in tuple form: (gate, target)
+    def execute_step(self, instruction):
+        pass
+    
         
         
     def init_tableau(self):
@@ -68,7 +80,6 @@ class tableau:
         return destabilizer_list
     
     
-    
     def commute(self,row1,row2):
         symplectic_inner_prod=0
         for i in range(0,self._num_qubit):
@@ -79,9 +90,19 @@ class tableau:
     
     
     def CNOT(self, control, target):
-        pass
+         for k in range(0,2*self._num_qubit):
+            #Swap xki and zki
+            multi=self._tableau[k,control+self._num_qubit]*self._tableau[k,target]
+            xorsum=(self._tableau[k,target+self._num_qubit]+self._tableau[k,control]+1)%2
+            #Set new rk
+            self._tableau[k,2*self._num_qubit]=(self._tableau[k,2*self._num_qubit]+multi+xorsum)%2
+            #Update zki and xki
+            self._tableau[k,target+self._num_qubit]=(self._tableau[k,target+self._num_qubit]+self._tableau[k,control+self._num_qubit])%2
+            self._tableau[k,control]=(self._tableau[k,control]+self._tableau[k,target])%2        
     
-    def Hadamard(self, target):
+    
+    #Hadamard gate
+    def H(self, target):
         for k in range(0,2*self._num_qubit):
             #Set new rk
             self._tableau[k,2*self._num_qubit]=(self._tableau[k,2*self._num_qubit]+(self._tableau[k,target]*self._tableau[k,target+self._num_qubit]))%2
@@ -91,8 +112,36 @@ class tableau:
             self._tableau[k,target+self._num_qubit]=tmp   
     
     
-    def Phase(self, target):
+    #Phase gate
+    def P(self, target):
+        for k in range(0,2*self._num_qubit):
+            #Set new rk
+            self._tableau[k,2*self._num_qubit]=(self._tableau[k,2*self._num_qubit]+(self._tableau[k,target]*self._tableau[k,target+self._num_qubit]))%2
+            #Update zki
+            self._tableau[k,target]=(self._tableau[k,target]+self._tableau[k,target+self._num_qubit])%2
+
+            
+    #Pauli X gate           
+    def X(self, target):
         pass
+    
+    #Pauli Y gate          
+    def Y(self, target):
+        pass
+    
+    #Pauli Z gate     
+    def Z(self, target):
+        pass 
+ 
+    #Pauli CZ gate      
+    def CZ(self, control, target):
+        pass
+    
+    #Do gaussian elimination to reduce the tableau to the normal form
+    def Gaussian_elimination(self):
+        pass
+    
+    
     
     def measure(self, target):
         pass
