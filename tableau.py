@@ -51,7 +51,6 @@ class tableau:
             self.execute_step(instruction)
         
     
-    
     #Execute one instruction. Instruction is in tuple form: (gate, target)
     def execute_step(self, instruction):
         if instruction[0] == 'h':
@@ -173,19 +172,26 @@ class tableau:
     
     #Pauli Y gate          
     def Y(self, target):
-        pass
+        self.X(target)
+        self.Z(target)
     
     #Pauli Z gate     
     def Z(self, target):
         self.P(target)
         self.P(target)
-        
  
     #Pauli CZ gate      
     def CZ(self, control, target):
         self.H(target)
         self.CNOT(control,target)
         self.H(target)
+    
+    
+    
+    #Calculate the inner product of two tableau
+    def inner_product(self,other):
+        pass
+    
     
     #Do gaussian elimination to reduce the tableau to the normal form
     def Gaussian_elimination(self):
