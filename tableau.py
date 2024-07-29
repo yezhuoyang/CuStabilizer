@@ -68,11 +68,28 @@ class tableau:
         return destabilizer_list
     
     
+    
+    def commute(self,row1,row2):
+        symplectic_inner_prod=0
+        for i in range(0,self._num_qubit):
+            symplectic_inner_prod+=self._tableau[row1,i]*self._tableau[row2+self._num_qubit,i]
+        for i in range(0,self._num_qubit):
+            symplectic_inner_prod+=self._tableau[row1+self._num_qubit,i]*self._tableau[row2,i]      
+        return symplectic_inner_prod%2==0 
+    
+    
     def CNOT(self, control, target):
         pass
     
     def Hadamard(self, target):
-        pass
+        for k in range(0,2*self._num_qubit):
+            #Set new rk
+            self._tableau[k,2*self._num_qubit]=(self._tableau[k,2*self._num_qubit]+(self._tableau[k,target]*self._tableau[k,target+self._num_qubit]))%2
+            #Swap xki and zki
+            tmp=self._tableau[k,target]
+            self._tableau[k,target]=self._tableau[k,target+self._num_qubit]
+            self._tableau[k,target+self._num_qubit]=tmp   
+    
     
     def Phase(self, target):
         pass
