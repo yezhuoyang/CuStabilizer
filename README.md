@@ -14,7 +14,7 @@ Tb=tableau(3)
 Tb.init_tableau()
 stablist=Tb.get_stabilizers()
 print(stablist)
-'''
+```
 
 User can add some Clifford gates by the provided interface:
 
@@ -29,7 +29,7 @@ Tb.X(0,2)
 Tb.Y(0,2)
 stablist=Tb.get_stabilizers()
 print(stablist)
-'''
+```
 
 
 User can also read the instructions from other file:
@@ -42,7 +42,7 @@ Tb.read_instructions_from_file("testcases/example1.stab")
 Tb.calculate()
 stablist=Tb.get_stabilizers()
 print(stablist)
-'''
+```
 
 
 
