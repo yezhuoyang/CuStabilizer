@@ -1,0 +1,1 @@
+nvcc tableau.cu -o test
