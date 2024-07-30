@@ -75,4 +75,11 @@ print(stablist)
 ```
 
 
+# Low rank stabilizer decomposistion
 
+
+
+# Noisy circuit simulation
+
+
+## Trajectory method

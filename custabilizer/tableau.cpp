@@ -1,15 +1,20 @@
 
 #include <iostream>
 #include <vector>
+#include <sstream>
+#include <fstream>
+#include <cstdlib>
+
+
 using namespace std;
 
-#define CNOT 0
-#define HADAMARD 1
-#define PHASE 2
-#define PAULIX 3
-#define PAULIY 4
-#define PAULIZ 5
-#define CZ 6
+#define _CONTROLNOT 0
+#define _HADAMARD 1
+#define _PHASE 2
+#define _PAULIX 3
+#define _PAULIY 4
+#define _PAULIZ 5
+#define _CONTROLZ 6
 
 
 
@@ -17,7 +22,45 @@ struct Instruction {
     int type;
     int target;
     int control;
+
+    Instruction(const int& tp,const int& contr,const int& targ):type(tp),target(targ),control(contr){
+
+    }
+
 };
+
+
+// Overload the << operator outside the struct without friend
+std::ostream& operator<<(std::ostream& os, const  Instruction& inst) {
+    switch (inst.type)
+    {
+    case _CONTROLNOT:
+        os << "CNOT " << inst.control << "," << inst.target;
+        break;
+    case _CONTROLZ:
+        os << "CZ " << inst.control << "," << inst.target;       
+         break; 
+    case _HADAMARD:
+        os << "H " <<inst.target;      
+        break;
+    case _PHASE:
+        os << "P " <<inst.target;      
+        break;
+    case _PAULIX:
+        os << "X " <<inst.target;      
+        break;    
+    case _PAULIY:
+        os << "Y " <<inst.target;      
+        break;  
+    case _PAULIZ:
+        os << "Z " <<inst.target;      
+        break;               
+    default:
+        break;
+    }
+    return os;
+}
+
 
 
 class Tableau {
@@ -30,7 +73,7 @@ private:
 
 public:
 
-         Tableau(size_t num_qubits) : num_qubits(num_qubits){
+         Tableau(const size_t& num_qubits) : num_qubits(num_qubits){
              tableauMatrix.resize(num_qubits*2);
              for (size_t i = 0; i < num_qubits*2; i++) {
                  tableauMatrix[i].resize(num_qubits*2+1);
@@ -45,17 +88,116 @@ public:
             }
          }
 
+
          void calculate(){
-            
+            for(auto it=instructionSet->begin();it!=instructionSet->end();it++){
+                execute_step(*it);
+            }
          }
 
 
-         void read_instructions_from_file(){
-
+         void read_instructions_from_file(const string &  filepath){
+            ifstream file(filepath);
+            vector<std::string> words;
+            string word;
+            if(!file.is_open()){
+                cerr<<"File not exists!"<<endl;
+            }
+            string line;
+            size_t count;
+            int control;
+            int target;
+            Instruction* instpointer;
+            while(getline(file,line)){
+                words.clear();
+                count=0;
+                istringstream iss(line);
+                while(iss>>word){
+                    words.push_back(word);
+                    count++;
+                }
+                if(count==2){
+                    if(words[0]=="h"){
+                         target  = std::atoi(words[1].c_str());
+                         instpointer=new Instruction(_HADAMARD,-1,target);
+                         instructionSet->push_back(*instpointer);
+                    }
+                    else if(words[0]=="p"){
+                         target  = std::atoi(words[1].c_str());
+                         instpointer=new Instruction(_PHASE,-1,target);
+                         instructionSet->push_back(*instpointer);
+                    }
+                    else if(words[0]=="x"){
+                         target  = std::atoi(words[1].c_str());
+                         instpointer=new Instruction(_PAULIX,-1,target);
+                         instructionSet->push_back(*instpointer);
+                    }
+                    else if(words[0]=="y"){
+                         target  = std::atoi(words[1].c_str());
+                         instpointer=new Instruction(_PAULIY,-1,target);
+                         instructionSet->push_back(*instpointer);
+                    }
+                    else if(words[0]=="z"){
+                         target  = std::atoi(words[1].c_str());
+                         instpointer=new Instruction(_PAULIZ,-1,target);
+                         instructionSet->push_back(*instpointer);
+                    }
+                }
+                else if(count==3){
+                    if(words[0]=="c"){
+                         control = std::atoi(words[1].c_str());
+                         target  = std::atoi(words[2].c_str());
+                         instpointer=new Instruction(_CONTROLNOT,control,target);
+                         instructionSet->push_back(*instpointer);
+                    }
+                    else if(words[0]=="cz"){
+                         control = std::atoi(words[1].c_str());
+                         target  = std::atoi(words[2].c_str());
+                         instpointer=new Instruction(_CONTROLZ,control,target);
+                         instructionSet->push_back(*instpointer);
+                    }                    
+                }
+            }
+            file.close();
          }
 
-         void execute_step(Instruction inst){
+         void print_instructions(){
+            if(instructionSet==nullptr){
+                return;
+            }
+            for(auto it=instructionSet->begin();it!=instructionSet->end();it++){
+                cout<<*it<<endl;
+            }
+         }
 
+
+
+         void execute_step(const Instruction& inst){
+            switch (inst.type)
+            {
+            case _CONTROLNOT:
+                CNOT(inst.control,inst.target);
+                break;
+            case _HADAMARD:
+                H(inst.target);
+                break;
+            case _PHASE:
+                P(inst.target);
+                break;
+            case _PAULIX:
+                X(inst.target);
+                break;
+            case _PAULIY:
+                Y(inst.target);
+                break;            
+            case _PAULIZ:
+                Z(inst.target);
+                break;
+            case _CONTROLZ:
+                CZ(inst.control,inst.target);
+            default:
+                break;
+            }
          }
 
 
@@ -116,34 +258,34 @@ public:
             }
         }
 
-        void X(size_t target){
+        void X(const size_t& target){
 
         }
 
-         void Y(size_t target){
+         void Y(const size_t& target){
 
          }
 
-        void Z(size_t target){
+        void Z(const size_t& target){
 
         }
 
 
-        void P(size_t target){
+        void P(const size_t& target){
 
         }
 
 
-        void H(size_t target){
+        void H(const size_t& target){
 
         }
 
 
-        void CNOT(size_t control,size_t target){
+        void CNOT(const size_t& control,const size_t& target){
 
         }
 
-        void CZ(size_t control,size_t target){
+        void CZ(const size_t& control,const size_t& target){
 
         }
 
@@ -166,5 +308,7 @@ int main() {
     tb->print_tableau();
     tb->calculate_stabilizers();
     tb->print_stabilizers();
+    tb->read_instructions_from_file("../testcases/example1.stab");
+    tb->print_instructions();
     return 0;
 }
