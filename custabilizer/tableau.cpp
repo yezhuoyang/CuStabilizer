@@ -20,14 +20,7 @@ public:
          }
 
         void read_instructions_from_file(){
-                string line;
-                ifstream file("instructions.txt");
-                if (file.is_open()) {
-                    while (getline(file, line)) {
-                        std::cout << line << std::endl;
-                    }
-                    file.close();
-                }
+
          }
 
          void print_tableau() {
@@ -42,12 +35,14 @@ public:
          
 
 
-}
+};
 
 
 
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
+    Tableau* tb=new Tableau(5,5);
+    tb->print_tableau();
     return 0;
 }
