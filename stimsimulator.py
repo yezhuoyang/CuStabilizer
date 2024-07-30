@@ -1,4 +1,4 @@
-
+import stim
 
 
 
@@ -11,7 +11,7 @@ class stimsimulator:
         #Store instructions in tuples
         self._instructions=[]
         self._measured_result=[]
-    
+        self._simulator = stim.TableauSimulator()
     
     #Read instructions from a file
     def read_instructions_from_file(self, filepath):
@@ -47,7 +47,6 @@ class stimsimulator:
     
     
     def calculate(self):
-        self.init_tableau()
         for instruction in self._instructions:
             self.execute_step(instruction)
         
@@ -70,6 +69,45 @@ class stimsimulator:
             self.CNOT(instruction[1], instruction[2])
         elif instruction[0] == 'm':
             self.measure(instruction[1])
+            
+            
+    def CNOT(self, control, target):
+        self._simulator.cnot(control, target)
+    
+    
+    #Hadamard gate
+    def H(self, target):
+        self._simulator.h(target)
+    
+    
+    #Phase gate
+    def P(self, target):
+        self._simulator.s(target)
+
+
+    #Pauli X gate           
+    def X(self, target):
+         self._simulator.x(target)
+    
+    #Pauli Y gate          
+    def Y(self, target):
+         self._simulator.y(target)
+
+    #Pauli Z gate     
+    def Z(self, target):
+         self._simulator.z(target)
+ 
+ 
+    #Pauli CZ gate      
+    def CZ(self, control, target):
+         self._simulator.cz(control,target)
+    
+    
+    def measure(self, target):
+        if(self._simulator.measure(target)):
+            self._measured_result.append(1)
+        else:
+            self._measured_result.append(0)
             
             
         
