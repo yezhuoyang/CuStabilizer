@@ -4,7 +4,9 @@
 In this repository, I implement a cuda package for stabilizer simulation and compare the performance with qiskit, stim, and cuquantum
 
 
-# Usecase
+# Usecases of tableau simulation 
+
+## My tableau simulator
 
 To initialize the tableau stabilizer, import the class from tableau.py file:
 
@@ -38,6 +40,34 @@ User can also read the instructions from other file:
 ```python
 from tableau import tableau
 Tb=tableau(3)
+Tb.read_instructions_from_file("testcases/example1.stab")
+Tb.calculate()
+stablist=Tb.get_stabilizers()
+print(stablist)
+```
+
+
+## Tableau simulator in c++
+
+The tableau simulation is also implented in C++. To compile and run, excute the following command:
+
+
+```console
+g++ -o tableau tableau.cpp
+./tableau
+```
+
+
+
+## Stim
+
+
+To compare with the simulation speed 
+
+
+```python
+from stimsimulator import stimsimulator
+Stimtb=stimsimulator(3)
 Tb.read_instructions_from_file("testcases/example1.stab")
 Tb.calculate()
 stablist=Tb.get_stabilizers()

@@ -74,13 +74,13 @@ public:
          }
 
 
-         void init_tableau(){
+        void init_tableau(){
             for(size_t i=0; i< num_qubits*2;i++){
                 tableauMatrix[i][i]=1;
             }
-         }
+        }
 
-         void X(size_t target){
+        void X(size_t target){
 
         }
 
