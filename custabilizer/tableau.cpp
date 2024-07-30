@@ -3,6 +3,22 @@
 #include <vector>
 using namespace std;
 
+#define CNOT 0
+#define HADAMARD 1
+#define PHASE 2
+#define PAULIX 3
+#define PAULIY 4
+#define PAULIZ 5
+#define CZ 6
+
+
+
+struct Instruction {
+    int type;
+    int target;
+    int control;
+};
+
 
 class Tableau {
 
@@ -10,6 +26,7 @@ private:
          size_t num_qubits;
          vector<vector<bool>> tableauMatrix;
          vector<string>* stablizerList;
+         vector<Instruction>* instructionSet; 
 
 public:
 
@@ -18,11 +35,30 @@ public:
              for (size_t i = 0; i < num_qubits*2; i++) {
                  tableauMatrix[i].resize(num_qubits*2+1);
              }
+             instructionSet=new vector<Instruction>();
          }
+
+         ~Tableau(){
+            delete instructionSet;
+            if(stablizerList!=nullptr){
+                delete stablizerList;
+            }
+         }
+
+         void calculate(){
+            
+         }
+
 
          void read_instructions_from_file(){
 
          }
+
+         void execute_step(Instruction inst){
+
+         }
+
+
 
          void print_tableau() {
              for (size_t i = 0; i < num_qubits*2; i++) {
