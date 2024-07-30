@@ -1,1 +1,1 @@
-g++ -o test tableau.cpp
+g++ -o test test.cpp tableau.cpp
