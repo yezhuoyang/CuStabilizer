@@ -249,7 +249,7 @@ public:
                  }
                  stablizerList->push_back(tmpstr);
             }
-         }
+        }
 
 
         void init_tableau(){
@@ -259,41 +259,57 @@ public:
         }
 
         void X(const size_t& target){
-
+            H(target);
+            Z(target);
+            H(target);
         }
 
          void Y(const size_t& target){
-
+             X(target);
+             Z(target);
          }
 
         void Z(const size_t& target){
-
+            P(target);
+            P(target);
         }
 
-
         void P(const size_t& target){
-
+            for(size_t k=0;k<2*num_qubits;k++){
+                tableauMatrix[k][2*num_qubits]=((tableauMatrix[k][2*num_qubits])!=(tableauMatrix[k][target]&&tableauMatrix[k][target+num_qubits]));
+                tableauMatrix[k][target]=(tableauMatrix[k][target]!=tableauMatrix[k][target+num_qubits]);
+            }
         }
 
 
         void H(const size_t& target){
-
+            bool tmp;
+            for(size_t k=0;k<2*num_qubits;k++){
+                tableauMatrix[k][2*num_qubits]=((tableauMatrix[k][2*num_qubits])!=(tableauMatrix[k][target]&&tableauMatrix[k][target+num_qubits]));
+                tmp=tableauMatrix[k][target];
+                tableauMatrix[k][target]=tableauMatrix[k][target+num_qubits];
+                tableauMatrix[k][target+num_qubits]=tmp;
+            }
         }
 
-
         void CNOT(const size_t& control,const size_t& target){
-
+            bool multi;
+            bool xorsum;
+            for(size_t k=0;k<2*num_qubits;k++){
+                multi=(tableauMatrix[k][control+num_qubits]&&tableauMatrix[k][target]);
+                xorsum=(tableauMatrix[k][target+num_qubits]==tableauMatrix[k][control]);
+                tableauMatrix[k][2*num_qubits]=(tableauMatrix[k][2*num_qubits]!=multi);
+                tableauMatrix[k][2*num_qubits]=(tableauMatrix[k][2*num_qubits]!=xorsum);
+                tableauMatrix[k][target+num_qubits]=(tableauMatrix[k][target+num_qubits]!=tableauMatrix[k][control+num_qubits]);
+                tableauMatrix[k][control]=(tableauMatrix[k][control]!=tableauMatrix[k][target]);
+            } 
         }
 
         void CZ(const size_t& control,const size_t& target){
-
+            H(target);
+            CNOT(control,target);
+            H(target);          
         }
-
-
-
-
-
-         
 
 
 };
@@ -310,5 +326,8 @@ int main() {
     tb->print_stabilizers();
     tb->read_instructions_from_file("../testcases/example1.stab");
     tb->print_instructions();
+    tb->calculate();
+    tb->calculate_stabilizers();
+    tb->print_stabilizers();
     return 0;
 }
