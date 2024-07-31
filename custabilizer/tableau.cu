@@ -2,6 +2,38 @@
 #include <vector>
 #include <iostream>
 #include <cuda_runtime.h>
+#include <string>
+
+#include <sstream>
+#include <fstream>
+
+
+
+
+#define _CONTROLNOT 0
+#define _HADAMARD 1
+#define _PHASE 2
+#define _PAULIX 3
+#define _PAULIY 4
+#define _PAULIZ 5
+#define _CONTROLZ 6
+
+
+
+struct Instruction {
+    int type;
+    int target;
+    int control;
+
+    Instruction(const int& tp,const int& contr,const int& targ):type(tp),target(targ),control(contr){
+
+    }
+
+};
+
+
+// Overload the << operator outside the struct without friend
+std::ostream& operator<<(std::ostream& os, const  Instruction& inst);
 
 
 
@@ -15,6 +47,41 @@ __global__  void vector_add(float *A,float *B, float *C, int N) {
      if(i<N){
         C[i]=A[i]+B[i];
      }
+}
+
+
+__global__ void X(int *tableauMatrix,const size_t& target,int qubit_num,int N){
+
+}
+
+
+__global__ void Y(int *tableauMatrix,const size_t& target,int qubit_num,int N){
+
+}
+
+
+__global__ void Z(int *tableauMatrix,const size_t& target,int qubit_num,int N){
+
+}
+
+
+__global__ void P(int *tableauMatrix,const size_t& target,int qubit_num,int N){
+
+}
+
+
+__global__ void H(int *tableauMatrix,const size_t& target,int qubit_num,int N){
+
+}
+
+
+__global__ void CNOT(int *tableauMatrix,const size_t& control,const size_t& target,int qubit_num,int N){
+
+}
+
+
+__global__ void CZ(int *tableauMatrix,const size_t& control,const size_t& target,int qubit_num,int N){
+
 }
 
 
