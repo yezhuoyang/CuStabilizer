@@ -54,7 +54,7 @@ private:
          int blocksPerGrid;
          bool cudaMode;
          vector<vector<bool>> tableauMatrix;
-         unsigned char* tableauMatrix;
+         unsigned char* char_tableauMatrix;
          unsigned char* cutableauMatrix;         
          vector<string>* stablizerList;
          vector<Instruction>* instructionSet; 
@@ -79,8 +79,8 @@ public:
          void CNOT(const size_t& control,const size_t& target);
          void CZ(const size_t& control,const size_t& target);
          void checkCudaError(const char* msg);
-         void show_tableau_bit(const unsigned char* tableauMatrix,const int& num_qubit);
-         void show_tableau_char(const unsigned char* tableauMatrix,const int& num_qubit);
+         void show_tableau_bit();
+         void show_tableau_char();
 };
 
 

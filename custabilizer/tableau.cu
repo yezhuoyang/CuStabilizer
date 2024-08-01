@@ -149,7 +149,7 @@ __global__ void H_cuda(unsigned char* tableauMatrix,size_t target,int qubit_num,
 }
 
 
-__global__ void CNOT(unsigned char* tableauMatrix,size_t control,size_t target,int qubit_num,int rowsize,int N){
+__global__ void CNOT_cuda(unsigned char* tableauMatrix,size_t control,size_t target,int qubit_num,int rowsize,int N){
      int row=threadIdx.x;
     if(row<N){
         int zi=getTableauElement(tableauMatrix,rowsize, row, control);
@@ -224,31 +224,31 @@ int main() {
 
   unsigned char* cutableauMatrix;
   cudaMalloc(&cutableauMatrix,size);
-  checkCudaError("cudaMalloc");
+  //checkCudaError("cudaMalloc");
 
   cudaMemcpy(cutableauMatrix,tableauMatrix,size,cudaMemcpyHostToDevice); 
-  checkCudaError("cudaMemcpy to device");  
+  //checkCudaError("cudaMemcpy to device");  
 
   int threadsPerBlock = 2*num_qubit;
   int blocksPerGrid =1;
 
-  H<<<blocksPerGrid, threadsPerBlock>>>(cutableauMatrix,1,num_qubit,rowsize,2*num_qubit);
-  CNOT<<<blocksPerGrid, threadsPerBlock>>>(cutableauMatrix,0,1,num_qubit,rowsize,2*num_qubit);
+  H_cuda<<<blocksPerGrid, threadsPerBlock>>>(cutableauMatrix,1,num_qubit,rowsize,2*num_qubit);
+  CNOT_cuda<<<blocksPerGrid, threadsPerBlock>>>(cutableauMatrix,0,1,num_qubit,rowsize,2*num_qubit);
 
 
 
-  checkCudaError("Kernel launch");
+  //checkCudaError("Kernel launch");
   cudaDeviceSynchronize();
-  checkCudaError("Kernel execution");
+  //checkCudaError("Kernel execution");
 
   cudaMemcpy(tableauMatrix,cutableauMatrix,size,cudaMemcpyDeviceToHost); 
-  checkCudaError("cudaMemcpy to host");
+  //checkCudaError("cudaMemcpy to host");
 
   cudaFree(cutableauMatrix);
-  checkCudaError("cudaFree");
+  //checkCudaError("cudaFree");
 
-  show_tableau_bit(tableauMatrix,num_qubit);  
-  show_tableau_char(tableauMatrix,num_qubit);  
+  //show_tableau_bit(tableauMatrix,num_qubit);  
+  //show_tableau_char(tableauMatrix,num_qubit);  
 
   return 0;
 }
