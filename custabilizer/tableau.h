@@ -6,7 +6,7 @@
 #include <sstream>
 #include <fstream>
 #include <cstdlib>
-
+#include <cuda_runtime.h>
 
 using namespace std;
 
@@ -18,6 +18,15 @@ using namespace std;
 #define _PAULIZ 5
 #define _CONTROLZ 6
 
+//Macro function used to set the bitvalue of tableau for cuda calculation
+#define getTableauElement(tableauMatrix,rowsize, row, col) (tableauMatrix[row*rowsize+col/8]&(0b10000000>>(col%8)))>>(7-(col%8))
+
+
+#define setTableauValue(tableauMatrix,rowsize, row, col,value)       \
+    do {                             \
+        tableauMatrix[row*rowsize+col/8]=(value==1?(tableauMatrix[row*rowsize+col/8]|(0b00000000^(1<<(7-(col%8))))):(tableauMatrix[row*rowsize+col/8]&(0b11111111^(1<<(7-(col%8)))))); \
+    } while (0)
+
 
 
 struct Instruction {
@@ -25,9 +34,7 @@ struct Instruction {
     int target;
     int control;
 
-    Instruction(const int& tp,const int& contr,const int& targ):type(tp),target(targ),control(contr){
-
-    }
+    Instruction(const int& tp,const int& contr,const int& targ):type(tp),target(targ),control(contr){}
 
 };
 
@@ -36,18 +43,25 @@ struct Instruction {
 std::ostream& operator<<(std::ostream& os, const  Instruction& inst);
 
 
-
 class Tableau {
 
 private:
          size_t num_qubits;
+         int threadNum;
+         int rowsize;
+         int charsize;
+         int threadsPerBlock;
+         int blocksPerGrid;
+         bool cudaMode;
          vector<vector<bool>> tableauMatrix;
+         unsigned char* tableauMatrix;
+         unsigned char* cutableauMatrix;         
          vector<string>* stablizerList;
          vector<Instruction>* instructionSet; 
 
 public:
 
-         Tableau(const size_t& num_qubits);
+         Tableau(const size_t& num_qubits,const bool& _cudaMode);
          ~Tableau();
          void calculate();
          void read_instructions_from_file(const string &  filepath);
@@ -64,6 +78,9 @@ public:
          void H(const size_t& target);
          void CNOT(const size_t& control,const size_t& target);
          void CZ(const size_t& control,const size_t& target);
+         void checkCudaError(const char* msg);
+         void show_tableau_bit(const unsigned char* tableauMatrix,const int& num_qubit);
+         void show_tableau_char(const unsigned char* tableauMatrix,const int& num_qubit);
 };
 
 

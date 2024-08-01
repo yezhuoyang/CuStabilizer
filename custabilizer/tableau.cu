@@ -8,44 +8,6 @@
 #include <fstream>
 
 
-#define _CONTROLNOT 0
-#define _HADAMARD 1
-#define _PHASE 2
-#define _PAULIX 3
-#define _PAULIY 4
-#define _PAULIZ 5
-#define _CONTROLZ 6
-
-
-
-struct Instruction {
-    int type;
-    int target;
-    int control;
-
-    Instruction(const int& tp,const int& contr,const int& targ):type(tp),target(targ),control(contr){
-
-    }
-
-};
-
-
-// Overload the << operator outside the struct without friend
-std::ostream& operator<<(std::ostream& os, const  Instruction& inst);
-
-
-
-__global__ void cuda_hello(){
-    printf("Hello World from GPU!\n");
-}
-
-
-__global__  void vector_add(float *A,float *B, float *C, int N) {
-     int i=blockDim.x*blockIdx.x+threadIdx.x;
-     if(i<N){
-        C[i]=A[i]+B[i];
-     }
-}
 
 
 #define getTableauElement(tableauMatrix,rowsize, row, col) (tableauMatrix[row*rowsize+col/8]&(0b10000000>>(col%8)))>>(7-(col%8))
@@ -58,22 +20,8 @@ __global__  void vector_add(float *A,float *B, float *C, int N) {
 
 
 
-__global__ void X(unsigned char* tableauMatrix,const size_t& target,const int& qubit_num,const int& rowsize,const int& N){
 
-}
-
-
-__global__ void Y(unsigned char* tableauMatrix,const size_t& target,const int& qubit_num,const int& rowsize,const int& N){
-
-}
-
-
-__global__ void Z(unsigned char* tableauMatrix,const size_t& target,const int& qubit_num,const int& rowsize,const int& N){
-
-}
-
-
-__global__ void P(unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N){
+__global__ void P_cuda(unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N){
     int row=threadIdx.x;
     if(row<N){
         int r=getTableauElement(tableauMatrix,rowsize, row, (2*qubit_num));
@@ -84,7 +32,7 @@ __global__ void P(unsigned char* tableauMatrix,size_t target,int qubit_num,int r
     }
 }
 
-__global__ void H(unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N){
+__global__ void H_cuda(unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N){
     int row=threadIdx.x;
     if(row<N){
         int tmp=getTableauElement(tableauMatrix,rowsize, row, target);
@@ -97,7 +45,7 @@ __global__ void H(unsigned char* tableauMatrix,size_t target,int qubit_num,int r
 }
 
 
-__global__ void CNOT(int *tableauMatrix,size_t control,size_t target,int qubit_num,int rowsize,int N){
+__global__ void CNOT_cuda(int *tableauMatrix,size_t control,size_t target,int qubit_num,int rowsize,int N){
      int row=threadIdx.x;
     if(row<N){
         int zi=getTableauElement(tableauMatrix,rowsize, row, control);
@@ -116,11 +64,6 @@ __global__ void CNOT(int *tableauMatrix,size_t control,size_t target,int qubit_n
 }
 
 
-__global__ void CZ(int *tableauMatrix,const size_t& control,const size_t& target,const int& qubit_num,const int& rowsize,int N){
-
-}
-
-
 // Function to print the binary representation of a char
 void printBinary(char ch) {
     for (int i = 7; i >= 0; --i) { // Loop from 7 to 0 to get bits from MSB to LSB
@@ -129,66 +72,6 @@ void printBinary(char ch) {
 }
 
 
-void checkCudaError(const char* msg) {
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess) {
-        std::cerr << "CUDA error: " << msg << ": " << cudaGetErrorString(err) << std::endl;
-        exit(EXIT_FAILURE);
-    }
-}
-
-
-
-void show_tableau_bit(const unsigned char* tableauMatrix,const int& num_qubit){
-    int rowsize=((2*num_qubit+1)+7)/8; 
-    int tmpindex;
-    int showint;
-    for(int row=0;row<2*num_qubit;row++){
-          for(int col=0;col<2*num_qubit+1;col++){
-                  //tmpindex=col-8*(col/8);
-                  //showint=(tableauMatrix[row*rowsize+col/8]&(0b10000000>>tmpindex));
-                  //showint=showint>>(7-tmpindex);
-                  showint=getTableauElement(tableauMatrix,rowsize, row, col);
-                  std::cout<<showint<<" ";
-          }
-          std::cout<<"\n";
-    }
-}
-
-
-
-void show_tableau_char(const unsigned char* tableauMatrix,const int& num_qubit){
-    int rowsize=((2*num_qubit+1)+7)/8; 
-    int tmpindex;
-    int zstabint;
-    int xstabint;
-    int phaseint;
-    std::string tmpstr;
-    for(int row=0;row<num_qubit;row++){
-          tmpstr="";
-          for(int col=0;col<num_qubit;col++){
-                  zstabint=getTableauElement(tableauMatrix,rowsize, row, col);
-                  xstabint=getTableauElement(tableauMatrix,rowsize, row, (col+num_qubit));
-                  if((xstabint==0)&&(zstabint==0)){
-                        tmpstr=tmpstr+"I";
-                  }
-                  else if((xstabint==1)&&(zstabint==0)){
-                        tmpstr=tmpstr+"X";
-                  }
-                  else if((xstabint==0)&&(zstabint==1)){
-                        tmpstr=tmpstr+"Z";
-                  }
-                  else{
-                         tmpstr=tmpstr+"Y";
-                  }
-          }
-          phaseint=getTableauElement(tableauMatrix,rowsize, row, (2*num_qubit));
-          if(phaseint==1){
-                tmpstr="-"+tmpstr;
-          }
-          std::cout<<tmpstr<<"\n";
-    }
-}
 
 
 //How to get element tableauMatrix[i][j]?

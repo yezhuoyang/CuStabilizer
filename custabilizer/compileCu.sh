@@ -1,1 +1,3 @@
-nvcc tableau.cu -o test
+nvcc -o test test.cpp tableau.cpp tableau.cu
+
+
