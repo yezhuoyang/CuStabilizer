@@ -3,10 +3,9 @@
 #include <iostream>
 #include <cuda_runtime.h>
 #include <string>
-
+#include <bitset>
 #include <sstream>
 #include <fstream>
-
 
 
 
@@ -44,10 +43,14 @@ __global__ void cuda_hello(){
 
 __global__  void vector_add(float *A,float *B, float *C, int N) {
      int i=blockDim.x*blockIdx.x+threadIdx.x;
+
+
+
      if(i<N){
         C[i]=A[i]+B[i];
      }
 }
+
 
 
 __global__ void X(int *tableauMatrix,const size_t& target,int qubit_num,int N){
@@ -85,56 +88,125 @@ __global__ void CZ(int *tableauMatrix,const size_t& control,const size_t& target
 }
 
 
+// Function to print the binary representation of a char
+void printBinary(char ch) {
+    for (int i = 7; i >= 0; --i) { // Loop from 7 to 0 to get bits from MSB to LSB
+        std::cout << ((ch >> i) & 1);
+    }
+}
+
+
+#define getTableauElement(tableauMatrix,rowsize, row, col) (tableauMatrix[row*rowsize+col/8]&(0b10000000>>(col-8*(col/8))))>>(7-col+8*(col/8))
+
+
+void show_tableau_bit(const unsigned char* tableauMatrix,const int& num_qubit){
+    int rowsize=((2*num_qubit+1)+7)/8; 
+    int tmpindex;
+    int showint;
+    for(int row=0;row<2*num_qubit;row++){
+          for(int col=0;col<2*num_qubit+1;col++){
+                  //tmpindex=col-8*(col/8);
+                  //showint=(tableauMatrix[row*rowsize+col/8]&(0b10000000>>tmpindex));
+                  //showint=showint>>(7-tmpindex);
+                  showint=getTableauElement(tableauMatrix,rowsize, row, col);
+                  std::cout<<showint<<" ";
+          }
+          std::cout<<"\n";
+    }
+}
+
+
+
+void show_tableau_char(const unsigned char* tableauMatrix,const int& num_qubit){
+    int rowsize=((2*num_qubit+1)+7)/8; 
+    int tmpindex;
+    int zstabint;
+    int xstabint;
+    int phaseint;
+    std::string tmpstr;
+    for(int row=0;row<num_qubit;row++){
+          tmpstr="";
+          for(int col=0;col<num_qubit;col++){
+                  zstabint=getTableauElement(tableauMatrix,rowsize, row, col);
+                  xstabint=getTableauElement(tableauMatrix,rowsize, row, col+num_qubit);
+                  if((xstabint==0)&&(zstabint==0)){
+                        tmpstr=tmpstr+"I";
+                  }
+                  else if((xstabint==1)&&(zstabint==0)){
+                        tmpstr=tmpstr+"X";
+                  }
+                  else if((xstabint==0)&&(zstabint==1)){
+                        tmpstr=tmpstr+"Z";
+                  }
+                  else{
+                         tmpstr=tmpstr+"Y";
+                  }
+          }
+          phaseint=getTableauElement(tableauMatrix,rowsize, row, 2*num_qubit);
+          if(phaseint==1){
+                tmpstr="-"+tmpstr;
+          }
+          std::cout<<tmpstr<<"\n";
+    }
+}
+
+
+
 
 
 int main() {
 
 
-  int N=100;
-  size_t size=N* sizeof(float);
+  int num_qubit=5;
 
-  //Allocate vectors in host memory
-  float* h_A =(float*) malloc(size);
-  float* h_B =(float*) malloc(size); 
-  float* h_C =(float*) malloc(size);
+  int threadNum=2*num_qubit;
 
-  //Initialize input vector
-  for(int i=0;i<N;++i){
-      h_A[i]=i;
-      h_B[i]=i;
-      h_C[i]=i;
+
+  // Every row is processed in a single thread, every thread is exactly one row of the tableau
+  // Every tableau is process in a block, every block is exactly processed in one block
+  int rowsize=((2*num_qubit+1)+7)/8; 
+  int size=rowsize*(2*num_qubit);
+
+  unsigned char* tableauMatrix =(unsigned char*) malloc(size);
+
+  //Initialize the tableau
+  for(int i=0;i<size;++i){
+      tableauMatrix[i]=0;
   }
 
-  float* d_A;
-  cudaMalloc(&d_A,size);
-  float* d_B;
-  cudaMalloc(&d_B,size);
-  float* d_C;
-  cudaMalloc(&d_C,size);    
-
-  cudaMemcpy(d_A,h_A,size,cudaMemcpyHostToDevice);  
-  cudaMemcpy(d_B,h_B,size,cudaMemcpyHostToDevice);
-  cudaMemcpy(d_C,h_C,size,cudaMemcpyHostToDevice);
-    
-
-  int threadsPerBlock = 256;
-  int blocksPerGrid = (N+threadsPerBlock-1)/threadsPerBlock;
-
-  vector_add<<<blocksPerGrid,threadsPerBlock>>>(d_A,d_B,d_C,N);
-
- //copy result from device memory to host memory
- //h_C contains the result in host memory
- 
- cudaMemcpy(h_C,d_C,size,cudaMemcpyDeviceToHost);
-
- cudaFree(d_A);
- cudaFree(d_B);
- cudaFree(d_C);
-
-  //Initialize input vector
- for(int i=0;i<N;++i){
-      std::cout<<h_C[i]<<std::endl;   
+  int tmpindex;
+  for(int k=0;k<2*num_qubit;k++){
+      tmpindex=k-8*(k/8);
+      tableauMatrix[k*rowsize+k/8]=(tableauMatrix[k*rowsize+k/8]^(0b10000000>>tmpindex));
   }
+
+  show_tableau_bit(tableauMatrix,num_qubit);  
+
+  show_tableau_char(tableauMatrix,num_qubit);  
+
+  //How to get element tableauMatrix[i][j]?
+  //  The byte contain the bit infor is  tableauMatrix[i*rowsize+j/8]
+  //  The index of the element in this byte is: j-8*(j/8)
+
+
+  //How to get the exact bit value of index k from a char A?
+  // int bit = (A >> k) & 1;
+
  
- return 0;
+  //If I have two bytes A and B, I want to get the XOR of the bit of A,B with index k?
+  //  ((A ^ B)>>k)&1;
+
+
+  //If I have two bytes A and B, I want to get the multplication of the bit of A,B with index k?
+  //  ((A & B)>>k)&1;
+
+
+
+
+  return 0;
+
+
+
+
+
 }
