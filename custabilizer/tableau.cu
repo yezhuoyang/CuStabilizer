@@ -35,6 +35,72 @@ std::ostream& operator<<(std::ostream& os, const  Instruction& inst);
 
 
 
+void  read_instructions_from_file(std::vector<Instruction>* instructionSet,const std::string &  filepath){
+    std::ifstream file(filepath);
+    std::vector<std::string> words;
+    std::string word;
+    if(!file.is_open()){
+        std::cerr<<"File not exists!"<<std::endl;
+    }
+    std::string line;
+    size_t count;
+    int control;
+    int target;
+    Instruction* instpointer;
+    while(getline(file,line)){
+        words.clear();
+        count=0;
+        std::istringstream iss(line);
+        while(iss>>word){
+            words.push_back(word);
+            count++;
+        }
+        if(count==2){
+            if(words[0]=="h"){
+                    target  = std::atoi(words[1].c_str());
+                    instpointer=new Instruction(_HADAMARD,-1,target);
+                    instructionSet->push_back(*instpointer);
+            }
+            else if(words[0]=="p"){
+                    target  = std::atoi(words[1].c_str());
+                    instpointer=new Instruction(_PHASE,-1,target);
+                    instructionSet->push_back(*instpointer);
+            }
+            else if(words[0]=="x"){
+                    target  = std::atoi(words[1].c_str());
+                    instpointer=new Instruction(_PAULIX,-1,target);
+                    instructionSet->push_back(*instpointer);
+            }
+            else if(words[0]=="y"){
+                    target  = std::atoi(words[1].c_str());
+                    instpointer=new Instruction(_PAULIY,-1,target);
+                    instructionSet->push_back(*instpointer);
+            }
+            else if(words[0]=="z"){
+                    target  = std::atoi(words[1].c_str());
+                    instpointer=new Instruction(_PAULIZ,-1,target);
+                    instructionSet->push_back(*instpointer);
+            }
+        }
+        else if(count==3){
+            if(words[0]=="c"){
+                    control = std::atoi(words[1].c_str());
+                    target  = std::atoi(words[2].c_str());
+                    instpointer=new Instruction(_CONTROLNOT,control,target);
+                    instructionSet->push_back(*instpointer);
+            }
+            else if(words[0]=="cz"){
+                    control = std::atoi(words[1].c_str());
+                    target  = std::atoi(words[2].c_str());
+                    instpointer=new Instruction(_CONTROLZ,control,target);
+                    instructionSet->push_back(*instpointer);
+            }                    
+        }
+    }
+    file.close();
+}
+
+
 __global__ void cuda_hello(){
     printf("Hello World from GPU!\n");
 }
@@ -97,7 +163,7 @@ __global__ void H(unsigned char* tableauMatrix,size_t target,int qubit_num,int r
 }
 
 
-__global__ void CNOT(int *tableauMatrix,size_t control,size_t target,int qubit_num,int rowsize,int N){
+__global__ void CNOT(unsigned char* tableauMatrix,size_t control,size_t target,int qubit_num,int rowsize,int N){
      int row=threadIdx.x;
     if(row<N){
         int zi=getTableauElement(tableauMatrix,rowsize, row, control);
@@ -208,6 +274,7 @@ void show_tableau_char(const unsigned char* tableauMatrix,const int& num_qubit){
 //  ((A & B)>>k)&1;
 
 
+
 int main() {
 
 
@@ -245,7 +312,10 @@ int main() {
   int blocksPerGrid =1;
 
   H<<<blocksPerGrid, threadsPerBlock>>>(cutableauMatrix,1,num_qubit,rowsize,2*num_qubit);
-  
+  CNOT<<<blocksPerGrid, threadsPerBlock>>>(cutableauMatrix,0,1,num_qubit,rowsize,2*num_qubit);
+
+
+
   checkCudaError("Kernel launch");
   cudaDeviceSynchronize();
   checkCudaError("Kernel execution");
