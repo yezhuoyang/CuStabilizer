@@ -33,12 +33,90 @@ std::ostream& operator<<(std::ostream& os, const  Instruction& inst) {
 }
 
 
-Tableau::Tableau(const size_t& num_qubits) : num_qubits(num_qubits){
+
+void Tableau::show_tableau_bit(const unsigned char* tableauMatrix,const int& num_qubit){
+    int rowsize=((2*num_qubit+1)+7)/8; 
+    int tmpindex;
+    int showint;
+    for(int row=0;row<2*num_qubit;row++){
+          for(int col=0;col<2*num_qubit+1;col++){
+                  //tmpindex=col-8*(col/8);
+                  //showint=(tableauMatrix[row*rowsize+col/8]&(0b10000000>>tmpindex));
+                  //showint=showint>>(7-tmpindex);
+                  showint=getTableauElement(tableauMatrix,rowsize, row, col);
+                  std::cout<<showint<<" ";
+          }
+          std::cout<<"\n";
+    }
+}
+
+
+
+void Tableau::show_tableau_char(const unsigned char* tableauMatrix,const int& num_qubit){
+    int rowsize=((2*num_qubit+1)+7)/8; 
+    int tmpindex;
+    int zstabint;
+    int xstabint;
+    int phaseint;
+    std::string tmpstr;
+    for(int row=0;row<num_qubit;row++){
+          tmpstr="";
+          for(int col=0;col<num_qubit;col++){
+                  zstabint=getTableauElement(tableauMatrix,rowsize, row, col);
+                  xstabint=getTableauElement(tableauMatrix,rowsize, row, (col+num_qubit));
+                  if((xstabint==0)&&(zstabint==0)){
+                        tmpstr=tmpstr+"I";
+                  }
+                  else if((xstabint==1)&&(zstabint==0)){
+                        tmpstr=tmpstr+"X";
+                  }
+                  else if((xstabint==0)&&(zstabint==1)){
+                        tmpstr=tmpstr+"Z";
+                  }
+                  else{
+                         tmpstr=tmpstr+"Y";
+                  }
+          }
+          phaseint=getTableauElement(tableauMatrix,rowsize, row, (2*num_qubit));
+          if(phaseint==1){
+                tmpstr="-"+tmpstr;
+          }
+          std::cout<<tmpstr<<"\n";
+    }
+}
+
+
+
+void Tableau::checkCudaError(const char* msg) {
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        std::cerr << "CUDA error: " << msg << ": " << cudaGetErrorString(err) << std::endl;
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+Tableau::Tableau(const size_t& num_qubits,const bool& _cudaMode) : num_qubits(num_qubits),cudaMode(_cudaMode){
     tableauMatrix.resize(num_qubits*2);
     for (size_t i = 0; i < num_qubits*2; i++) {
         tableauMatrix[i].resize(num_qubits*2+1);
     }
     instructionSet=new vector<Instruction>();
+
+    //Initialize the cuda memory
+    if(cudaMode){
+            threadNum=2*num_qubit;
+            threadsPerBlock = 2*num_qubit;
+            blocksPerGrid =1;
+            // Every row is processed in a single thread, every thread is exactly one row of the tableau
+            // Every tableau is process in a block, every block is exactly processed in one block
+            rowsize=((2*num_qubit+1)+7)/8; 
+            charsize=rowsize*(2*num_qubit);
+            tableauMatrix =(unsigned char*) malloc(charsize);
+            cudaMalloc(&cutableauMatrix,charsize);
+            checkCudaError("cudaMalloc");
+    }
+
 }
 
 Tableau::~Tableau(){
@@ -46,12 +124,23 @@ Tableau::~Tableau(){
     if(stablizerList!=nullptr){
         delete stablizerList;
     }
+    if(tableauMatrix!=nullptr){
+        delete tableauMatrix;
+    }
+    if(cudaMode){
+          cudaFree(cutableauMatrix);
+          checkCudaError("cudaFree");
+    }
 }
 
 
 void  Tableau::calculate(){
     for(auto it=instructionSet->begin();it!=instructionSet->end();it++){
         execute_step(*it);
+    }
+    if(cudaMode){
+          cudaMemcpy(tableauMatrix,cutableauMatrix,charsize,cudaMemcpyDeviceToHost); 
+          checkCudaError("cudaMemcpy to host");
     }
 }
 
@@ -158,6 +247,10 @@ void  Tableau::execute_step(const Instruction& inst){
     default:
         break;
     }
+    if(cudaMode){
+            cudaDeviceSynchronize();
+            checkCudaError("Kernel execution");
+    }
 }
 
 
@@ -213,6 +306,18 @@ void  Tableau::calculate_stabilizers(){
 
 
 void  Tableau::init_tableau(){
+    if(cudaMode){
+          //Initialize the tableau
+        for(int i=0;i<size;++i){
+            tableauMatrix[i]=0;
+        }
+        for(int k=0;k<2*num_qubit;k++){
+            setTableauValue(tableauMatrix,rowsize, k, k,1);
+        }
+        cudaMemcpy(cutableauMatrix,tableauMatrix,charsize,cudaMemcpyHostToDevice); 
+        checkCudaError("cudaMemcpy to device");  
+        return;
+    }
     for(size_t i=0; i< num_qubits*2;i++){
         tableauMatrix[i][i]=1;
     }
@@ -235,6 +340,10 @@ void  Tableau::Z(const size_t& target){
 }
 
 void Tableau::P(const size_t& target){
+    if(cudaMode){
+        P_cuda<<<blocksPerGrid, threadsPerBlock>>>(cutableauMatrix,target,num_qubits,rowsize,2*num_qubits);
+        return;
+    }
     for(size_t k=0;k<2*num_qubits;k++){
         tableauMatrix[k][2*num_qubits]=((tableauMatrix[k][2*num_qubits])!=(tableauMatrix[k][target]&&tableauMatrix[k][target+num_qubits]));
         tableauMatrix[k][target]=(tableauMatrix[k][target]!=tableauMatrix[k][target+num_qubits]);
@@ -243,6 +352,10 @@ void Tableau::P(const size_t& target){
 
 
 void Tableau::H(const size_t& target){
+    if(cudaMode){
+         H_cuda<<<blocksPerGrid, threadsPerBlock>>>(cutableauMatrix,target,num_qubits,rowsize,2*num_qubits);
+         return;
+    }
     bool tmp;
     for(size_t k=0;k<2*num_qubits;k++){
         tableauMatrix[k][2*num_qubits]=((tableauMatrix[k][2*num_qubits])!=(tableauMatrix[k][target]&&tableauMatrix[k][target+num_qubits]));
@@ -253,6 +366,10 @@ void Tableau::H(const size_t& target){
 }
 
 void Tableau::CNOT(const size_t& control,const size_t& target){
+    if(cudaMode){
+        CNOT_cuda(cutableauMatrix,control,target,num_qubits,rowsize,2*num_qubits);
+        return;
+    }
     bool multi;
     bool xorsum;
     for(size_t k=0;k<2*num_qubits;k++){
@@ -273,3 +390,9 @@ void Tableau::CZ(const size_t& control,const size_t& target){
 
 
 
+
+__global__ void P_cuda(unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N);
+
+__global__ void H_cuda(unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N);
+
+__global__ void CNOT_cuda(int *tableauMatrix,size_t control,size_t target,int qubit_num,int rowsize,int N);
