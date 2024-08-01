@@ -47,15 +47,51 @@ print(stablist)
 ```
 
 
-## Tableau simulator in c++
+## Tableau simulator in c++ and using cuda
 
 The tableau simulation is also implented in C++. To compile and run, excute the following command:
 
 
 ```console
-g++ -o tableau tableau.cpp
-./tableau
+cd custabilizer
+./compile.sh
+./test
 ```
+
+## Tableau simulator using cuda
+
+
+First, modify the code in test.cpp to make sure you start the cuda mode of simulation
+
+```c++
+int main() {
+    std::cout << "Hello, World!" << std::endl;
+    Tableau* tb=new Tableau(5,true);
+    tb->init_tableau();
+    tb->print_tableau();
+    tb->calculate_stabilizers();
+    tb->print_stabilizers();
+    tb->read_instructions_from_file("../testcases/example1.stab");
+    tb->print_instructions();
+    tb->calculate();
+    //tb->calculate_stabilizers();
+    //tb->print_stabilizers();
+    
+    tb->show_tableau_bit();
+    tb->show_tableau_char();
+    return 0;
+}
+```
+
+Then, compile the code by running the following script:
+
+```console
+cd custabilizer
+./compileCu.sh
+./test
+```
+
+
 
 
 
