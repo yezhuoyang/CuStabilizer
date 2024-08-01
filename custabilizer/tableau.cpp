@@ -1,12 +1,12 @@
 #include "tableau.h"
+#include <cuda_runtime.h>
 
 
+void P_cuda(int blocksPerGrid,int threadsPerBlock,unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N);
 
-__global__ void P_cuda(unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N);
+void H_cuda(int blocksPerGrid,int threadsPerBlock,unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N);
 
-__global__ void H_cuda(unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N);
-
-__global__ void CNOT_cuda(int *tableauMatrix,size_t control,size_t target,int qubit_num,int rowsize,int N);
+void CNOT_cuda(int blocksPerGrid,int threadsPerBlock,unsigned char* tableauMatrix,size_t control,size_t target,int qubit_num,int rowsize,int N);
 
 
 // Overload the << operator outside the struct without friend
@@ -349,7 +349,7 @@ void  Tableau::Z(const size_t& target){
 
 void Tableau::P(const size_t& target){
     if(cudaMode){
-        P_cuda<<<blocksPerGrid, threadsPerBlock>>>(cutableauMatrix,target,num_qubits,rowsize,2*num_qubits);
+        P_cuda(blocksPerGrid, threadsPerBlock,cutableauMatrix,target,num_qubits,rowsize,2*num_qubits);
         return;
     }
     for(size_t k=0;k<2*num_qubits;k++){
@@ -361,7 +361,7 @@ void Tableau::P(const size_t& target){
 
 void Tableau::H(const size_t& target){
     if(cudaMode){
-         H_cuda<<<blocksPerGrid, threadsPerBlock>>>(cutableauMatrix,target,num_qubits,rowsize,2*num_qubits);
+         H_cuda(blocksPerGrid, threadsPerBlock,cutableauMatrix,target,num_qubits,rowsize,2*num_qubits);
          return;
     }
     bool tmp;
@@ -375,7 +375,7 @@ void Tableau::H(const size_t& target){
 
 void Tableau::CNOT(const size_t& control,const size_t& target){
     if(cudaMode){
-        CNOT_cuda<<<blocksPerGrid, threadsPerBlock>>>(cutableauMatrix,control,target,num_qubits,rowsize,2*num_qubits);
+        CNOT_cuda(blocksPerGrid, threadsPerBlock,cutableauMatrix,control,target,num_qubits,rowsize,2*num_qubits);
         return;
     }
     bool multi;

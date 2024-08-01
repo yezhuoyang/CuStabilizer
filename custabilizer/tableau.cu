@@ -125,7 +125,10 @@ __global__  void vector_add(float *A,float *B, float *C, int N) {
 
 
 
-__global__ void P_cuda(unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N){
+
+
+
+__global__ void _P_cuda(unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N){
     int row=threadIdx.x;
     if(row<N){
         int r=getTableauElement(tableauMatrix,rowsize, row, (2*qubit_num));
@@ -136,7 +139,7 @@ __global__ void P_cuda(unsigned char* tableauMatrix,size_t target,int qubit_num,
     }
 }
 
-__global__ void H_cuda(unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N){
+__global__ void _H_cuda(unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N){
     int row=threadIdx.x;
     if(row<N){
         int tmp=getTableauElement(tableauMatrix,rowsize, row, target);
@@ -149,7 +152,7 @@ __global__ void H_cuda(unsigned char* tableauMatrix,size_t target,int qubit_num,
 }
 
 
-__global__ void CNOT_cuda(unsigned char* tableauMatrix,size_t control,size_t target,int qubit_num,int rowsize,int N){
+__global__ void _CNOT_cuda(unsigned char* tableauMatrix,size_t control,size_t target,int qubit_num,int rowsize,int N){
      int row=threadIdx.x;
     if(row<N){
         int zi=getTableauElement(tableauMatrix,rowsize, row, control);
@@ -166,6 +169,20 @@ __global__ void CNOT_cuda(unsigned char* tableauMatrix,size_t control,size_t tar
         setTableauValue(tableauMatrix,rowsize, row, control,((zi+zj)%2));
     }   
 }
+
+
+void P_cuda(int blocksPerGrid,int threadsPerBlock,unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N){
+    _P_cuda<<<blocksPerGrid,threadsPerBlock>>>( tableauMatrix,target,qubit_num,rowsize,N);
+}
+
+void H_cuda(int blocksPerGrid,int threadsPerBlock,unsigned char* tableauMatrix,size_t target,int qubit_num,int rowsize,int N){
+    _H_cuda<<<blocksPerGrid,threadsPerBlock>>>( tableauMatrix,target,qubit_num,rowsize,N);
+}
+
+void CNOT_cuda(int blocksPerGrid,int threadsPerBlock,unsigned char* tableauMatrix,size_t control,size_t target,int qubit_num,int rowsize,int N){
+    _CNOT_cuda<<<blocksPerGrid,threadsPerBlock>>>( tableauMatrix,control,target,qubit_num,rowsize,N);
+}
+
 
 
 // Function to print the binary representation of a char
@@ -195,7 +212,7 @@ void printBinary(char ch) {
 //  ((A & B)>>k)&1;
 
 
-
+/*
 int main() {
 
 
@@ -232,8 +249,8 @@ int main() {
   int threadsPerBlock = 2*num_qubit;
   int blocksPerGrid =1;
 
-  H_cuda<<<blocksPerGrid, threadsPerBlock>>>(cutableauMatrix,1,num_qubit,rowsize,2*num_qubit);
-  CNOT_cuda<<<blocksPerGrid, threadsPerBlock>>>(cutableauMatrix,0,1,num_qubit,rowsize,2*num_qubit);
+  _H_cuda<<<blocksPerGrid, threadsPerBlock>>>(cutableauMatrix,1,num_qubit,rowsize,2*num_qubit);
+  _CNOT_cuda<<<blocksPerGrid, threadsPerBlock>>>(cutableauMatrix,0,1,num_qubit,rowsize,2*num_qubit);
 
 
 
@@ -252,3 +269,4 @@ int main() {
 
   return 0;
 }
+*/
